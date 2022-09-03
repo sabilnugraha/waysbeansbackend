@@ -52,9 +52,9 @@ func (h *productHandler) FindProducts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create Embed Path File on Image property here ...
-	for i, p := range products {
-		products[i].Image = path_file + p.Image
-	}
+	// for i, p := range products {
+	// 	products[i].Image = path_file + p.Image
+	// }
 
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Status: "success", Data: products}
