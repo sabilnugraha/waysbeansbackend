@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 	authdto "waysbeans/dto/auths"
 	dto "waysbeans/dto/result"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/gorilla/mux"
 )
 
 type handlerAuth struct {
@@ -122,6 +124,11 @@ func (h *handlerAuth) Login(w http.ResponseWriter, r *http.Request) {
 		Fullname: user.Fullname,
 		Email:    user.Email,
 		Token:    token,
+		Phone:    user.Phone,
+		Address:  user.Address,
+		PostCode: user.PostCode,
+		City:     user.City,
+		Image:    user.Image,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -146,10 +153,15 @@ func (h *handlerAuth) CheckAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	CheckAuthResponse := authdto.CheckAuthResponse{
-		ID:       user.ID,
+		ID:       userId,
 		Fullname: user.Fullname,
 		Email:    user.Email,
 		Status:   user.Status,
+		Phone:    user.Phone,
+		Address:  user.Address,
+		PostCode: user.PostCode,
+		City:     user.City,
+		Image:    user.Image,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -157,9 +169,67 @@ func (h *handlerAuth) CheckAuth(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func (h *handlerAuth) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	request := new(authdto.UpdateUserRequest)
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+	user, err := h.AuthRepository.Getuser(int(id))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	if request.Address != "" {
+		user.Address = request.Address
+	}
+
+	if request.Phone != "" {
+		user.Phone = request.Phone
+	}
+
+	if request.PostCode != "" {
+		user.PostCode = request.PostCode
+	}
+
+	if request.City != "" {
+		user.City = request.City
+	}
+
+	data, err := h.AuthRepository.UpdateUser(user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	response := dto.SuccessResult{Status: "Success", Data: convertResponse(data)}
+	json.NewEncoder(w).Encode(response)
+}
+
 func ConvertRegisterResponse(u models.User) authdto.RegisterResponse {
 	return authdto.RegisterResponse{
 		Fullname: u.Fullname,
 		Email:    u.Email,
+	}
+}
+
+func convertResponse(u models.User) authdto.UpdateUserResponse {
+	return authdto.UpdateUserResponse{
+		Address:  u.Address,
+		Phone:    u.Phone,
+		PostCode: u.PostCode,
+		City:     u.City,
 	}
 }

@@ -78,6 +78,24 @@ func (h *productHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func (h *productHandler) GetProductImage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+
+	product, err := h.ProductRepository.GetProductImage(id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	response := dto.SuccessResult{Status: "success", Data: convertResponseProduct(product)}
+	json.NewEncoder(w).Encode(response)
+}
+
 // create product
 func (h *productHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -122,6 +140,83 @@ func (h *productHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	product, _ = h.ProductRepository.GetProduct(product.ID)
+
+	w.WriteHeader(http.StatusOK)
+	response := dto.SuccessResult{Status: "success", Data: data}
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *productHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	price, _ := strconv.Atoi(r.FormValue("price"))
+	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+	stock, _ := strconv.Atoi(r.FormValue("stock"))
+
+	dataContex := r.Context().Value("dataFile") // add this code
+	filename := dataContex.(string)             // add this code
+
+	request := productsdto.CreateProductRequest{
+		Name:  r.FormValue("name"),
+		Price: price,
+		Stock: stock,
+		Desc:  r.FormValue("desc"),
+	}
+
+	validation := validator.New()
+	err := validation.Struct(request)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	product, _ := h.ProductRepository.GetProduct(id)
+
+	product.Name = request.Name
+	product.Price = request.Price
+	product.Stock = request.Stock
+	product.Desc = request.Desc
+
+	if filename != "false" {
+		product.Image = filename
+	}
+
+	data, err := h.ProductRepository.UpdateProduct(product)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	response := dto.SuccessResult{Status: "success", Data: data}
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *productHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+
+	product, err := h.ProductRepository.GetProduct(id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	data, err := h.ProductRepository.DeleteProduct(product)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Status: "success", Data: data}

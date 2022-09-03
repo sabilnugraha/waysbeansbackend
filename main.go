@@ -8,11 +8,17 @@ import (
 	"waysbeans/routes"
 
 	"github.com/gorilla/handlers"
+	"github.com/joho/godotenv"
 
 	"github.com/gorilla/mux"
 )
 
 func main() {
+
+	errEnv := godotenv.Load()
+	if errEnv != nil {
+		panic("Failed to load env file")
+	}
 	// initial DB
 	mysql.DatabaseInit()
 
