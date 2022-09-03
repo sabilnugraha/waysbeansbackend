@@ -6,3 +6,7 @@ type CreateProductRequest struct {
 	Stock int    `json:"stock" gorm:"type: int"`
 	Desc  string `json:"desc" form:"desc" gorm:"type: varchar(255)"`
 }
+
+type UpdateStockRequest struct {
+	Stock int `json:"stock" gorm:"type: int"`
+}

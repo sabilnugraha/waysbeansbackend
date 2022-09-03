@@ -13,6 +13,7 @@ type Cart struct {
 	Qty           *int      `json:"qty" gorm:"default:1"`
 	CreatedAt     time.Time `json:"-"`
 	UpdatedAt     time.Time `json:"updated_at"`
+	Stockproduct  *int      `json:"stockproduct"`
 }
 
 type CartResponse struct {

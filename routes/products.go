@@ -19,4 +19,5 @@ func ProductRoutes(r *mux.Router) {
 	r.HandleFunc("/product", middleware.UploadFile(h.CreateProduct)).Methods("POST")
 	r.HandleFunc("/product/{id}", middleware.Auth(middleware.UploadFile(h.UpdateProduct))).Methods("PATCH")
 	r.HandleFunc("/product/{id}", middleware.Auth(h.DeleteProduct)).Methods("DELETE")
+	r.HandleFunc("/stock/{id}", h.UpdateProductQty).Methods("PATCH")
 }

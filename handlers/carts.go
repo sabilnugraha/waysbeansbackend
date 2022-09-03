@@ -148,11 +148,10 @@ func (h *handlersCart) UpdateCartQty(w http.ResponseWriter, r *http.Request) {
 	if request.SubTotal > 0 {
 		cart.SubTotal = &request.SubTotal
 	}
+	if request.Stockproduct > 0 {
+		cart.Stockproduct = &request.Stockproduct
+	}
 
-	// carts := models.Cart{
-	// 	Qty:      &request.Qty,
-	// 	SubTotal: &request.SubTotal,
-	// }
 	data, err := h.CartRepository.UpdateCart(cart)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

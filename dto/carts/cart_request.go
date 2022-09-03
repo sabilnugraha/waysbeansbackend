@@ -9,8 +9,9 @@ type CreateCart struct {
 }
 
 type UpdateQtyRequest struct {
-	Qty      int `json:"qty"`
-	SubTotal int `json:"subtotal"`
+	Qty          int `json:"qty"`
+	SubTotal     int `json:"subtotal"`
+	Stockproduct int `json:"stockproduct"`
 }
 
 type UpdateCartRequest struct {
