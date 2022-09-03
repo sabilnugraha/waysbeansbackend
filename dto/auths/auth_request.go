@@ -17,3 +17,7 @@ type UpdateUserRequest struct {
 	City     string `json:"city" gorm:"type: varchar(255)"`
 	PostCode string `json:"postcode" gorm:"type: varchar(255)"`
 }
+
+type UpdateProfile struct {
+	Image string `json:"image"`
+}

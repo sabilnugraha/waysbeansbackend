@@ -43,3 +43,10 @@ func (r *repository) UpdateUser(user models.User) (models.User, error) {
 
 	return user, err
 }
+
+func (r *repository) GetUser(ID int) (models.User, error) {
+	var user models.User
+	err := r.db.First(&user, ID).Error
+
+	return user, err
+}

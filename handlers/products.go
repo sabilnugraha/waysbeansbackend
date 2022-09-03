@@ -1,14 +1,19 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	productsdto "waysbeans/dto/products"
 	dto "waysbeans/dto/result"
 	"waysbeans/models"
 	"waysbeans/repositories"
 
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 )
@@ -71,7 +76,7 @@ func (h *productHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create Embed Path File on Image property here ...
-	product.Image = path_file + product.Image
+	// product.Image = path_file + product.Image
 
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Status: "success", Data: convertResponseProduct(product)}
@@ -100,8 +105,9 @@ func (h *productHandler) GetProductImage(w http.ResponseWriter, r *http.Request)
 func (h *productHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	dataContex := r.Context().Value("dataFile") // add this code
-	filename := dataContex.(string)             // add this code
+	// get image filepath
+	dataContex := r.Context().Value("dataFile")
+	filepath := dataContex.(string) // add this code
 
 	price, _ := strconv.Atoi(r.FormValue("price"))
 	stock, _ := strconv.Atoi(r.FormValue("stock"))
@@ -122,11 +128,26 @@ func (h *productHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var ctx = context.Background()
+	var CLOUD_NAME = os.Getenv("CLOUD_NAME")
+	var API_KEY = os.Getenv("API_KEY")
+	var API_SECRET = os.Getenv("API_SECRET")
+
+	// Add your Cloudinary credentials ...
+	cld, _ := cloudinary.NewFromParams(CLOUD_NAME, API_KEY, API_SECRET)
+
+	// Upload file to Cloudinary ...
+	resp, err := cld.Upload.Upload(ctx, filepath, uploader.UploadParams{Folder: "waysbeans"})
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
 	// data form pattern submit to pattern entity db product
 	product := models.Product{
 		Name:  request.Name,
 		Price: request.Price,
-		Image: filename,
+		Image: resp.SecureURL,
 		Stock: request.Stock,
 		Desc:  request.Desc,
 	}
@@ -153,9 +174,8 @@ func (h *productHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 	stock, _ := strconv.Atoi(r.FormValue("stock"))
 
-	dataContex := r.Context().Value("dataFile") // add this code
-	filename := dataContex.(string)             // add this code
-
+	dataContex := r.Context().Value("dataFile")
+	filepath := dataContex.(string) // add this code
 	request := productsdto.CreateProductRequest{
 		Name:  r.FormValue("name"),
 		Price: price,
@@ -173,15 +193,31 @@ func (h *productHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var ctx = context.Background()
+	var CLOUD_NAME = os.Getenv("CLOUD_NAME")
+	var API_KEY = os.Getenv("API_KEY")
+	var API_SECRET = os.Getenv("API_SECRET")
+
+	// Add your Cloudinary credentials ...
+	cld, _ := cloudinary.NewFromParams(CLOUD_NAME, API_KEY, API_SECRET)
+
+	// Upload file to Cloudinary ...
+	resp, err := cld.Upload.Upload(ctx, filepath, uploader.UploadParams{Folder: "waysbeans"})
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
 	product, _ := h.ProductRepository.GetProduct(id)
 
 	product.Name = request.Name
 	product.Price = request.Price
 	product.Stock = request.Stock
 	product.Desc = request.Desc
+	product.Image = resp.SecureURL
 
-	if filename != "false" {
-		product.Image = filename
+	if filepath != "false" {
+		product.Image = filepath
 	}
 
 	data, err := h.ProductRepository.UpdateProduct(product)
